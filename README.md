@@ -1,79 +1,67 @@
-# EcoTrack Authentication Module
+# EcoTrack Auth Stack
 
-Production-ready authentication stack for EcoTrack, covering backend (Node/Express/Sequelize/MySQL) and frontend (React/Tailwind). Scope is limited strictly to signup/login, JWT issuance, verification middleware, and a protected dashboard example.
+Lightweight authentication setup for EcoTrack using Node/Express/Prisma/MySQL on the backend and React + Vite on the frontend. The current scope covers user signup/login/logout, JWT issuance and verification, and a protected dashboard that only renders when a stored token is valid.
 
 ## Folder Structure
 ```
 /Users/aditsingh/Desktop/projects/ecotrack
 ├── backend
 │   ├── package.json
-│   ├── .env.example
-│   ├── sequelize-config.cjs
-│   ├── prisma/schema.prisma
-│   ├── db/migrations/202511180001-create-users.cjs
-│   └── src
-│       ├── server.js
-│       ├── config/database.js
-│       ├── config/prismaClient.js
-│       ├── models/{index.js,User.js}
-│       ├── controllers/authController.js
-│       ├── routes/auth.js
-│       ├── middleware/{authMiddleware.js,errorHandler.js}
-│       ├── utils/validationSchemas.js
-│       └── seed/seedAdmin.js
+│   ├── server.js
+│   ├── controllers/authController.js
+│   ├── routes/authRoutes.js
+│   ├── middlewares/authMiddleware.js
+│   ├── lib/prisma.js
+│   └── prisma
+│       └── schema.prisma
 └── frontend
     ├── package.json
     ├── vite.config.js
-    ├── tailwind.config.js
-    ├── postcss.config.js
-    ├── index.html
     └── src
-        ├── main.jsx
         ├── App.jsx
-        ├── services/axiosInstance.js
+        ├── pages/{Signup.jsx,Dashboard.jsx}
         ├── components/ProtectedRoute.jsx
-        ├── pages/{Login.jsx,Signup.jsx,Dashboard.jsx}
-        └── styles/index.css
+        └── services/axiosInstance.js
 ```
 
-## Backend Setup (Node + Express + Sequelize)
+## Backend (Express + Prisma + MySQL)
 1. `cd backend`
 2. `npm install`
-3. Copy `.env.example` to `.env` and update values:
-   - `PORT`, `DB_*`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `BCRYPT_SALT_ROUNDS`
-   - `DATABASE_URL` (Prisma) e.g. `mysql://user:pass@localhost:3306/ecotrack`
-   - Optional: `CLIENT_ORIGIN` (comma-separated list) for CORS, `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD`
-4. Ensure MySQL database exists (matching `DB_NAME`).
-5. Run migration: `npx sequelize-cli db:migrate --config sequelize-config.cjs --migrations-path db/migrations`
-6. Generate Prisma client: `npx prisma generate`
-7. (Optional) Seed admin: `npm run seed:admin`
-8. Start API: `npm run dev` (hot reload) or `npm start`.
+3. Create `.env` with:
+   ```
+   PORT=5000
+   DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/ecotrack"
+   JWT_SECRET="replace-me"
+   JWT_EXPIRY="1h"
+   CORS_ORIGINS="http://localhost:5173"
+   ```
+4. Apply Prisma schema (first migrate removes existing migrations if provider changed):
+   ```
+   npx prisma migrate dev --name init
+   ```
+5. Start the API: `npm start`
 
-The API exposes:
-- `POST /api/auth/signup`
-- `POST /api/auth/login`
-- `GET /api/auth/me` (protected)
+### API Surface
+- `POST /api/auth/signup` – create user, store bcrypt-hashed password, return JWT and profile.
+- `POST /api/auth/login` – verify credentials, return JWT and profile.
+- `POST /api/auth/logout` – client tosses the token; server responds with success message.
+- `GET /api/auth/me` – protected route; uses `Authorization: Bearer <token>` and Prisma to return the logged-in user.
 
-Password hashing uses bcrypt with configurable rounds. JWT payload includes `id`, `role`, `email` and honors `JWT_EXPIRES_IN`.
+### Implementation Notes
+- Prisma client is centralized in `lib/prisma.js` to avoid connection storms during hot reloads.
+- `authMiddleware.js` verifies JWTs and populates `req.user`; routes mount the middleware explicitly.
+- `server.js` wires Express, Prisma health check, auth routes, error handler, and CORS (default origin `http://localhost:5173`, override via `CORS_ORIGINS` env var).
 
-## Frontend Setup (React + Tailwind)
+## Frontend (React + Vite)
 1. `cd frontend`
 2. `npm install`
-3. `npm run dev`
-4. Visit `http://localhost:5173`
+3. Ensure `@vitejs/plugin-react` is installed (`npm install -D @vitejs/plugin-react`) if not already present.
+4. Run `npm run dev` and visit `http://localhost:5173`.
 
-Vite dev server proxies `/api` to `http://localhost:5000`. Tailwind styles live under `src/styles/index.css`. Axios instance auto-attaches JWT from `localStorage` (`ecotrack_token`). `ProtectedRoute` validates tokens by calling `/api/auth/me`.
-
-## Database Schema (users table)
-- `id` INT UNSIGNED PK AI
-- `name` VARCHAR(80)
-- `email` VARCHAR(120) UNIQUE
-- `password` VARCHAR(255)
-- `role` ENUM('user','admin') DEFAULT 'user'
-- `createdAt` DATETIME
-- `updatedAt` DATETIME
-
-Managed via Sequelize model `User` and migration `202511180001-create-users.cjs`.
+### Frontend Auth Flow
+- `axiosInstance` reads `ecotrack_token` from `localStorage` and attaches it as `Authorization: Bearer <token>` for `/api` calls.
+- `ProtectedRoute` checks whether a token exists and validates it via `/api/auth/me`; unauthenticated users are redirected to signup/login.
+- `Dashboard.jsx` consumes `/me` to display current user details; `Signup.jsx` handles both signup and login flows and stores the returned token in `localStorage`.
 
 ## Example Requests
 ### Signup
@@ -81,19 +69,6 @@ Managed via Sequelize model `User` and migration `202511180001-create-users.cjs`
 curl -X POST http://localhost:5000/api/auth/signup \
   -H 'Content-Type: application/json' \
   -d '{"name":"Aditi","email":"aditi@example.com","password":"Passw0rd!"}'
-```
-Response:
-```json
-{
-  "message": "User created successfully",
-  "token": "<jwt>",
-  "user": {
-    "id": 1,
-    "name": "Aditi",
-    "email": "aditi@example.com",
-    "role": "user"
-  }
-}
 ```
 
 ### Login
@@ -103,29 +78,27 @@ curl -X POST http://localhost:5000/api/auth/login \
   -d '{"email":"aditi@example.com","password":"Passw0rd!"}'
 ```
 
-### Get Profile (Protected)
+### Get Current User
 ```bash
 curl http://localhost:5000/api/auth/me \
   -H 'Authorization: Bearer <jwt>'
 ```
 
-## JWT Middleware Flow
-1. Frontend stores JWT in `localStorage` after signup/login.
-2. Axios interceptor attaches `Authorization: Bearer <token>`.
-3. `authMiddleware.js` verifies token, fetches user, attaches to `req.user`.
-4. Protected routes (e.g., `/api/auth/me`) rely on `req.user`.
+## Prisma Schema (excerpt)
+```
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique @db.VarChar(191)
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
 
-## Seed Admin User
-Environment-driven script (`npm run seed:admin`) authenticates DB connection, hashes password, and upserts an admin (`role: admin`). Configure credentials via `SEED_ADMIN_EMAIL`/`SEED_ADMIN_PASSWORD` in `.env` before running.
+## Troubleshooting
+- **`.env` permission errors**: ensure the backend process can read `/backend/.env` and that `JWT_SECRET`/`DATABASE_URL` are defined.
+- **Provider mismatch**: if switching from Postgres to MySQL, delete `prisma/migrations` before running `npx prisma migrate dev`.
+- **Frontend dev server**: install missing dev dependencies (e.g., `@vitejs/plugin-react`) if `vite.config.js` import errors appear.
 
-## Prisma ORM Setup
-- Prisma schema lives in `backend/prisma/schema.prisma` and mirrors the Sequelize `users` table (including the `Role` enum). After updating `.env`, run:
-  - `cd backend`
-  - `npx prisma generate` (or `npm run prisma:generate`)
-  - (Optional) `npx prisma db pull` to sync schema from an existing database
-- Import the ready-to-use client from `src/config/prismaClient.js` whenever you need Prisma alongside Sequelize.
-
-## Notes
-- Centralized error handling ensures consistent JSON responses.
-- Input validation uses Yup on the backend and simple client-side checks on the frontend.
-- No additional EcoTrack features are included beyond authentication scaffolding.
+This README reflects the project’s current state (Prisma + Express backend, Vite + React frontend) and should be kept up to date as new features land.

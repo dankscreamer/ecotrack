@@ -9,10 +9,9 @@ const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173')
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  'https://ecotrack-cyan.vercel.app',
+];
 
 app.use(
   cors({
