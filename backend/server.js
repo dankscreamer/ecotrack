@@ -42,7 +42,6 @@ app.use('/api/activities', activityRoutes);
 app.use('/api/rewards', rewardRoutes);
 
 app.use((err, _req, res, _next) => {
-  // eslint-disable-next-line no-console
   console.error(err);
   res.status(err.statusCode || 500).json({
     message: err.message || 'Something went wrong',
@@ -50,7 +49,6 @@ app.use((err, _req, res, _next) => {
 });
 
 app.listen(PORT, (error) => {
-  // eslint-disable-next-line no-console
   if (error) {
     console.error(error);
   } else {

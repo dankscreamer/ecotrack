@@ -44,7 +44,6 @@ const Dashboard = () => {
           navigate('/login');
         } else {
           console.error("Dashboard load failed", error);
-          // Optional: Set an error state to show a message to the user
         }
       } finally {
         setLoading(false);

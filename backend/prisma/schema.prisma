@@ -41,8 +41,8 @@ model Activity {
 model EmissionFactor {
   id      Int    @id @default(autoincrement())
   type    String @unique
-  factor  Float  // kg CO2 per unit
-  unit    String // e.g., "km", "kWh"
+  factor  Float
+  unit    String
 }
 
 model Reward {

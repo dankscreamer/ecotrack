@@ -1,16 +1,15 @@
 const prisma = require('../lib/prisma');
 
-// Helper to get emission factor (mocked or from DB)
 const getEmissionFactor = async (type) => {
   const factor = await prisma.emissionFactor.findUnique({
     where: { type },
   });
-  return factor ? factor.factor : 0; // Default to 0 if not found
+  return factor ? factor.factor : 0;
 };
 
 exports.getActivities = async (req, res) => {
   try {
-    const userId = req.user.id; // Assumes auth middleware sets req.user
+    const userId = req.user.id;
     const activities = await prisma.activity.findMany({
       where: { userId },
       orderBy: { date: 'desc' },
@@ -26,21 +25,19 @@ exports.addActivity = async (req, res) => {
     const userId = req.user.id;
     const { type, quantity } = req.body;
 
-    // Calculate emission
     let factor = await getEmissionFactor(type);
 
-    // Fallback factors if DB is empty (for demo purposes)
     if (factor === 0) {
       const defaultFactors = {
-        'Car Travel': 0.2, // kg CO2 per km
-        'Electricity': 0.5, // kg CO2 per kWh
-        'Flight': 0.15, // kg CO2 per km
-        'Public Transport': 0.05, // kg CO2 per km
-        'Walking': -0.1, // Saved CO2 per km (approx replacement of car)
-        'Cycling': -0.1, // Saved CO2 per km (approx replacement of car)
-        'Streaming (Video)': 0.036, // kg CO2 per hour
-        'Internet Data': 0.01, // kg CO2 per GB (avg of 5-15g)
-        'Gaming': 0.05, // kg CO2 per hour (estimated)
+        'Car Travel': 0.2,
+        'Electricity': 0.5,
+        'Flight': 0.15,
+        'Public Transport': 0.05,
+        'Walking': -0.1,
+        'Cycling': -0.1,
+        'Streaming (Video)': 0.036,
+        'Internet Data': 0.01,
+        'Gaming': 0.05,
       };
       factor = defaultFactors[type] || 0;
     }
@@ -57,8 +54,6 @@ exports.addActivity = async (req, res) => {
       },
     });
 
-    // Update user points (simple logic: 1 point per activity for now, or based on low emissions)
-    // Let's say 10 points for logging an activity
     await prisma.user.update({
       where: { id: userId },
       data: { points: { increment: 10 } }

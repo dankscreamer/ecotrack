@@ -1,104 +1,119 @@
-# EcoTrack Auth Stack
+# EcoTrack 🌿
 
-Lightweight authentication setup for EcoTrack using Node/Express/Prisma/MySQL on the backend and React + Vite on the frontend. The current scope covers user signup/login/logout, JWT issuance and verification, and a protected dashboard that only renders when a stored token is valid.
+EcoTrack is a modern, gamified carbon footprint tracker designed to help users monitor and reduce their environmental impact. It goes beyond traditional tracking by including **Digital Carbon Footprint** metrics (streaming, gaming, internet data) alongside physical activities.
 
-## Folder Structure
+## 🚀 Features
+
+### 🎨 UI/UX
+- **Premium Design**: Glassmorphism, sleek animations, and a modern aesthetic.
+- **Dark Mode**: Fully responsive dark mode with a toggle.
+- **Interactive Dashboard**: Staggered animations, hover effects, and a "Nature Soundscape" for focus.
+
+### 🌍 Tracking
+- **Activity Logging**: Log activities like Driving, Cycling, Flights, and Electricity usage.
+- **Digital Carbon**: Track emissions from Streaming, Gaming, and Internet Data.
+- **Dynamic Units**: Automatically adjusts units (km, kWh, GB, hours) based on activity type.
+
+### 🎮 Gamification & Insights
+- **Eco Points**: Earn points for logging activities and making eco-friendly choices.
+- **Badges**: Unlock achievements (e.g., "Eco Starter", "Carbon Neutral").
+- **EcoNudge**: Receive personalized tips based on your recent activity.
+- **Visual Stats**: View your emission history and progress with beautiful charts and tables.
+
+### 🔒 Security
+- **Authentication**: Secure Signup/Login with JWT (JSON Web Tokens).
+- **Protected Routes**: Dashboard and profile pages are secured.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+- **Framework**: React + Vite
+- **Styling**: Tailwind CSS (with custom animations & glassmorphism)
+- **Icons**: Lucide React
+- **Animations**: Framer Motion
+- **HTTP Client**: Axios
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: PostgreSQL (via Neon)
+- **ORM**: Prisma
+- **Authentication**: JWT + Bcrypt
+
+---
+
+## 📂 Folder Structure
+
 ```
-/Users/aditsingh/Desktop/projects/ecotrack
+/ecotrack
 ├── backend
-│   ├── package.json
-│   ├── server.js
-│   ├── controllers/authController.js
-│   ├── routes/authRoutes.js
-│   ├── middlewares/authMiddleware.js
-│   ├── lib/prisma.js
-│   └── prisma
-│       └── schema.prisma
+│   ├── controllers/      # Logic for Auth, Activities, Rewards
+│   ├── routes/           # API Routes
+│   ├── middlewares/      # Auth Middleware
+│   ├── prisma/           # Database Schema
+│   └── server.js         # Entry Point
 └── frontend
-    ├── package.json
-    ├── vite.config.js
-    └── src
-        ├── App.jsx
-        ├── pages/{Signup.jsx,Dashboard.jsx}
-        ├── components/ProtectedRoute.jsx
-        └── services/axiosInstance.js
+    ├── src
+    │   ├── components/   # Reusable UI (Navbar, EcoNudge, etc.)
+    │   ├── pages/        # Dashboard, Login, AddActivity, Profile
+    │   ├── services/     # Axios Configuration
+    │   └── index.css     # Global Styles (Tailwind + Custom)
+    └── vercel.json       # Deployment Config
 ```
 
-## Backend (Express + Prisma + MySQL)
-1. `cd backend`
-2. `npm install`
-3. Create `.env` with:
-   ```
-   PORT=5000
-   DATABASE_URL="mysql://USER:PASSWORD@HOST:PORT/ecotrack"
-   JWT_SECRET="replace-me"
-   JWT_EXPIRY="1h"
-   CORS_ORIGINS="http://localhost:5173"
-   ```
-4. Apply Prisma schema (first migrate removes existing migrations if provider changed):
-   ```
-   npx prisma migrate dev --name init
-   ```
-5. Start the API: `npm start`
+---
 
-### API Surface
-- `POST /api/auth/signup` – create user, store bcrypt-hashed password, return JWT and profile.
-- `POST /api/auth/login` – verify credentials, return JWT and profile.
-- `POST /api/auth/logout` – client tosses the token; server responds with success message.
-- `GET /api/auth/me` – protected route; uses `Authorization: Bearer <token>` and Prisma to return the logged-in user.
+## ⚡ Getting Started
 
-### Implementation Notes
-- Prisma client is centralized in `lib/prisma.js` to avoid connection storms during hot reloads.
-- `authMiddleware.js` verifies JWTs and populates `req.user`; routes mount the middleware explicitly.
-- `server.js` wires Express, Prisma health check, auth routes, error handler, and CORS (default origin `http://localhost:5173`, override via `CORS_ORIGINS` env var).
+### Prerequisites
+- Node.js (v16+)
+- PostgreSQL Database (e.g., Neon, local)
 
-## Frontend (React + Vite)
-1. `cd frontend`
-2. `npm install`
-3. Ensure `@vitejs/plugin-react` is installed (`npm install -D @vitejs/plugin-react`) if not already present.
-4. Run `npm run dev` and visit `http://localhost:5173`.
-
-### Frontend Auth Flow
-- `axiosInstance` reads `ecotrack_token` from `localStorage` and attaches it as `Authorization: Bearer <token>` for `/api` calls.
-- `ProtectedRoute` checks whether a token exists and validates it via `/api/auth/me`; unauthenticated users are redirected to signup/login.
-- `Dashboard.jsx` consumes `/me` to display current user details; `Signup.jsx` handles both signup and login flows and stores the returned token in `localStorage`.
-
-## Example Requests
-### Signup
+### 1. Backend Setup
 ```bash
-curl -X POST http://localhost:5000/api/auth/signup \
-  -H 'Content-Type: application/json' \
-  -d '{"name":"Aditi","email":"aditi@example.com","password":"Passw0rd!"}'
+cd backend
+npm install
+
+# Create .env file
+echo "PORT=4040
+DATABASE_URL='your_postgres_connection_string'
+JWT_SECRET='your_secret_key'
+JWT_EXPIRY='24h'" > .env
+
+# Run Migrations
+npx prisma migrate dev --name init
+
+# Start Server
+npm run dev
 ```
 
-### Login
+### 2. Frontend Setup
 ```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"aditi@example.com","password":"Passw0rd!"}'
+cd frontend
+npm install
+
+# Create .env file
+echo "VITE_API_URL=http://localhost:4040" > .env
+
+# Start Dev Server
+npm run dev
 ```
 
-### Get Current User
-```bash
-curl http://localhost:5000/api/auth/me \
-  -H 'Authorization: Bearer <jwt>'
-```
+Visit `http://localhost:5173` (or the port shown in terminal) to view the app.
 
-## Prisma Schema (excerpt)
-```
-model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique @db.VarChar(191)
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-```
+---
 
-## Troubleshooting
-- **`.env` permission errors**: ensure the backend process can read `/backend/.env` and that `JWT_SECRET`/`DATABASE_URL` are defined.
-- **Provider mismatch**: if switching from Postgres to MySQL, delete `prisma/migrations` before running `npx prisma migrate dev`.
-- **Frontend dev server**: install missing dev dependencies (e.g., `@vitejs/plugin-react`) if `vite.config.js` import errors appear.
+## 🔗 API Endpoints
 
-This README reflects the project’s current state (Prisma + Express backend, Vite + React frontend) and should be kept up to date as new features land.
+- **Auth**: `/api/auth/signup`, `/api/auth/login`, `/api/auth/me`
+- **Activities**: `/api/activities` (GET, POST, DELETE)
+- **Rewards**: `/api/rewards` (GET)
+
+---
+
+## ☁️ Deployment
+
+- **Frontend**: Configured for Vercel (`vercel.json` included for SPA routing).
+- **Backend**: Ready for deployment on platforms like Render, Railway, or Vercel (Serverless).
