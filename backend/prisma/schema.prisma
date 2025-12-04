@@ -19,6 +19,37 @@ model User {
   name      String
   email     String   @unique @db.VarChar(191)
   password  String
+  points    Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  activities Activity[]
+  rewards    Reward[]
+}
+
+model Activity {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  type           String
+  quantity       Float
+  emissionAmount Float
+  date           DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model EmissionFactor {
+  id      Int    @id @default(autoincrement())
+  type    String @unique
+  factor  Float  // kg CO2 per unit
+  unit    String // e.g., "km", "kWh"
+}
+
+model Reward {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id])
+  badgeName   String
+  description String?
+  earnedAt    DateTime @default(now())
 }

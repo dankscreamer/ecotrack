@@ -11,6 +11,8 @@ const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
   'https://ecotrack-cyan.vercel.app',
+  'http://localhost:5173',
+  'http://localhost:5174',
 ];
 
 app.use(
@@ -32,7 +34,12 @@ app.get('/health', async (_req, res) => {
   }
 });
 
+const activityRoutes = require('./routes/activityRoutes');
+const rewardRoutes = require('./routes/rewardRoutes');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/activities', activityRoutes);
+app.use('/api/rewards', rewardRoutes);
 
 app.use((err, _req, res, _next) => {
   // eslint-disable-next-line no-console

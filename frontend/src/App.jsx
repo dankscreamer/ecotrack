@@ -2,6 +2,9 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import Login from './pages/Login.jsx';
 import Signup from './pages/Signup.jsx';
 import Dashboard from './pages/Dashboard.jsx';
+import AddActivity from './pages/AddActivity.jsx';
+import MyStats from './pages/MyStats.jsx';
+import Profile from './pages/Profile.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 function App() {
@@ -14,6 +17,30 @@ function App() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/add-activity"
+        element={
+          <ProtectedRoute>
+            <AddActivity />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-stats"
+        element={
+          <ProtectedRoute>
+            <MyStats />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />
