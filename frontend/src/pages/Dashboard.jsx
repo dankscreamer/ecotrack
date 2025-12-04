@@ -39,8 +39,13 @@ const Dashboard = () => {
         setUser(userRes.data.user);
         setRecentActivities(activitiesRes.data.slice(0, 3));
       } catch (error) {
-        localStorage.removeItem('ecotrack_token');
-        navigate('/login');
+        if (error.response && error.response.status === 401) {
+          localStorage.removeItem('ecotrack_token');
+          navigate('/login');
+        } else {
+          console.error("Dashboard load failed", error);
+          // Optional: Set an error state to show a message to the user
+        }
       } finally {
         setLoading(false);
       }
@@ -166,8 +171,8 @@ const Dashboard = () => {
                     <div className="text-right">
                       <p
                         className={`font-bold ${activity.emissionAmount < 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-slate-800 dark:text-slate-200'
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : 'text-slate-800 dark:text-slate-200'
                           }`}
                       >
                         {activity.emissionAmount > 0 ? '+' : ''}
